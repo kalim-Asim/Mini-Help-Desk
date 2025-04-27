@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int        @id @default(autoincrement())
+  email    String     @unique
+  password String
+  name     String?
+  role     Role       @default(user)
+  complaints Complaint[]
+  feedbacks Feedback[]
+}
+
+model Personnel {
+  id        Int        @id @default(autoincrement())
+  name      String
+  contact   String
+  role      PersonnelRole
+  available Boolean
+  complaints Complaint[] @relation("PersonnelComplaints")
+  feedbacks  Feedback[]
+}
+
+model ComplaintType {
+  id       Int        @id @default(autoincrement())
+  type_name String     @unique
+  complaints Complaint[]
+}
+
+model Complaint {
+  id                    Int           @id @default(autoincrement())
+  status                ComplaintStatus @default(Pending)
+  createdAt             DateTime?     @default(now())
+  priority              Priority       @default(Low)
+  location              String?
+  message               String?
+  attachments           String?
+  feedback_given        Boolean        @default(false)
+  code                  String?
+  // Relations
+  complaint_type_id     Int?
+  complaintType         ComplaintType? @relation(fields: [complaint_type_id], references: [id])
+  assigned_personnel_id Int?
+  assignedPersonnel     Personnel? @relation("PersonnelComplaints", fields: [assigned_personnel_id], references: [id])
+  user_id               Int?
+  user                  User? @relation(fields: [user_id], references: [id])
+  feedback              Feedback?
+}
+
+model Feedback {
+  id                   Int       @id @default(autoincrement())
+  complaint_id         Int       @unique
+  user_id              Int
+  assigned_personnel_id Int
+  rating               Int
+  comment              String?
+  createdAt            DateTime  @default(now())
+  // Relations
+  complaint            Complaint @relation(fields: [complaint_id], references: [id])
+  user                 User      @relation(fields: [user_id], references: [id])
+  assignedPersonnel    Personnel @relation(fields: [assigned_personnel_id], references: [id])
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum PersonnelRole {
+  Network
+  Cleaning
+  Carpentry
+  PC_Maintenance
+  Plumbing
+  Electricity
+}
+
+enum ComplaintStatus {
+  Pending
+  Assigned
+  Resolved
+}
+
+enum Priority {
+  Low
+  Medium
+  High
+}
